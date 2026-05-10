@@ -12,7 +12,8 @@ const msalConfig = {
     navigateToLoginRequestUrl: false,
   },
   cache: {
-    cacheLocation: "localStorage",
+    cacheLocation: "sessionStorage",
+    storeAuthStateInCookie: true,
   },
 };
 
@@ -79,19 +80,14 @@ export function AuthProvider({ children }) {
       msalInstance.setActiveAccount(result.account);
       setAccount(result.account);
     } catch (error) {
+      console.error("loginPopup failed:", error);
       if (error && error.errorCode === "user_cancelled") {
         return;
       }
-      try {
-        await msalInstance.loginRedirect(loginRequest);
-      } catch (redirectError) {
-        console.error("loginRedirect failed:", redirectError);
-        setAuthError("Login failed: " + (redirectError.message || redirectError.toString()) + ". Resetting...");
-        setTimeout(() => {
-          window.sessionStorage.clear();
-          window.localStorage.clear();
-          window.location.href = window.location.pathname;
-        }, 2000);
+      if (error && error.errorCode === "popup_window_error") {
+        setAuthError("Popup blocked! Please allow popups for this site to sign in, or turn off aggressive privacy shields.");
+      } else {
+        setAuthError("Login failed: " + (error.message || error.toString()));
       }
     }
   }, [authError]);
