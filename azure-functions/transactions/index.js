@@ -7,6 +7,7 @@
 
 const { CosmosClient } = require("@azure/cosmos");
 const { randomUUID } = require("crypto");
+const { authenticate } = require("../shared/auth");
 
 const headers = {
   "Content-Type": "application/json",
@@ -34,7 +35,7 @@ function send(status, body = null) {
 }
 
 function getUserId(req) {
-  return req.query.userId || req.body?.userId || "demo-user-001";
+  return req.auth?.userId || req.query.userId || req.body?.userId || "demo-user-001";
 }
 
 module.exports = async function (context, req) {
@@ -47,6 +48,7 @@ module.exports = async function (context, req) {
   }
 
   try {
+    req.auth = await authenticate(req);
     const container = getContainer();
 
     if (method === "GET") {
@@ -114,6 +116,6 @@ module.exports = async function (context, req) {
     context.res = send(405, { error: "Method not allowed." });
   } catch (err) {
     context.log.error("Transaction API error:", err);
-    context.res = send(500, { error: err.message });
+    context.res = send(err.status || 500, { error: err.message });
   }
 };

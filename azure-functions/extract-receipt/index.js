@@ -5,6 +5,7 @@ const { DocumentAnalysisClient, AzureKeyCredential } = require("@azure/ai-form-r
 const { BlobServiceClient } = require("@azure/storage-blob");
 const multipart = require("parse-multipart-data");
 const { randomUUID } = require("crypto");
+const { authenticate } = require("../shared/auth");
 
 const headers = {
   "Content-Type": "application/json",
@@ -35,6 +36,7 @@ module.exports = async function (context, req) {
   }
 
   try {
+    req.auth = await authenticate(req);
     const contentType = req.headers["content-type"] || req.headers["Content-Type"] || "";
     const boundary = contentType.split("boundary=")[1];
 
@@ -107,6 +109,6 @@ module.exports = async function (context, req) {
     context.res = send(200, extracted);
   } catch (err) {
     context.log.error("Receipt extraction error:", err);
-    context.res = send(500, { error: err.message });
+    context.res = send(err.status || 500, { error: err.message });
   }
 };

@@ -2,6 +2,7 @@
 // Route: GET /api/analytics?userId=demo-user-001&months=6
 
 const { CosmosClient } = require("@azure/cosmos");
+const { authenticate } = require("../shared/auth");
 
 const headers = {
   "Content-Type": "application/json",
@@ -38,11 +39,13 @@ module.exports = async function (context, req) {
   const months = Math.max(1, Math.min(parseInt(req.query.months || "6", 10), 24));
 
   try {
+    req.auth = await authenticate(req);
+    const authenticatedUserId = req.auth.userId || userId;
     const container = getContainer();
     const { resources: txns } = await container.items
       .query({
         query: "SELECT * FROM c WHERE c.userId = @uid",
-        parameters: [{ name: "@uid", value: userId }],
+        parameters: [{ name: "@uid", value: authenticatedUserId }],
       })
       .fetchAll();
 
@@ -83,6 +86,6 @@ module.exports = async function (context, req) {
     });
   } catch (err) {
     context.log.error("Analytics API error:", err);
-    context.res = send(500, { error: err.message });
+    context.res = send(err.status || 500, { error: err.message });
   }
 };

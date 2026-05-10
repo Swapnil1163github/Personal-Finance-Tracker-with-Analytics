@@ -6,18 +6,19 @@
 const azureConfig = {
   // Azure AD B2C — from Azure Portal > App registrations
   auth: {
-    clientId: "YOUR_AZURE_AD_B2C_CLIENT_ID",
-    authority: "https://YOUR_TENANT.b2clogin.com/YOUR_TENANT.onmicrosoft.com/B2C_1_signupsignin",
-    knownAuthorities: ["YOUR_TENANT.b2clogin.com"],
+    clientId: "2ebbb428-16f3-4f4e-b51b-d409d3cbd684",
+    tenantId: "27302ad8-dd7c-45f6-80f3-e7fdce5a3955",
+    authority: "https://login.microsoftonline.com/27302ad8-dd7c-45f6-80f3-e7fdce5a3955",
+    scopes: ["api://2ebbb428-16f3-4f4e-b51b-d409d3cbd684/access_as_user"],
     redirectUri: window.location.origin,
   },
 
   // Azure Functions base URL — from your Function App overview
-  apiBaseUrl: "https://YOUR_FUNCTION_APP.azurewebsites.net/api",
+  apiBaseUrl: "https://financeflow-swapnil-api.azurewebsites.net/api",
 
   // Azure Blob Storage — for receipt uploads
   blobStorage: {
-    accountName: "YOUR_STORAGE_ACCOUNT_NAME",
+    accountName: "financeflowswapnil",
     containerName: "receipts",
     sasToken: "YOUR_SAS_TOKEN",  // Generate from Azure Portal > Storage > Shared access signature
   },
