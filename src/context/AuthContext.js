@@ -51,6 +51,7 @@ export function AuthProvider({ children }) {
         if (mounted) setAccount(activeAccount);
       } catch (error) {
         console.error("MSAL redirect error:", error);
+        window.history.replaceState({}, document.title, window.location.pathname);
         const activeAccount = msalInstance.getAllAccounts()[0] || null;
         if (activeAccount) msalInstance.setActiveAccount(activeAccount);
         if (mounted) setAccount(activeAccount);
@@ -74,7 +75,17 @@ export function AuthProvider({ children }) {
       if (error && error.errorCode === "user_cancelled") {
         return;
       }
-      await msalInstance.loginRedirect(loginRequest);
+      try {
+        await msalInstance.loginRedirect(loginRequest);
+      } catch (redirectError) {
+        console.error("loginRedirect failed:", redirectError);
+        if (redirectError && redirectError.errorCode === "interaction_in_progress") {
+          // Cache is stuck, clear it and reload
+          window.sessionStorage.clear();
+          window.localStorage.clear();
+          window.location.reload();
+        }
+      }
     }
   }, []);
 
