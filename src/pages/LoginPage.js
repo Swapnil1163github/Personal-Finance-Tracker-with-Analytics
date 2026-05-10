@@ -2,7 +2,7 @@ import React from "react";
 import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, authError } = useAuth();
 
   return (
     <div style={{
@@ -71,6 +71,23 @@ export default function LoginPage() {
         }}>
           Azure Entra secured
         </div>
+
+        {authError && (
+          <div style={{
+            background: "rgba(239,68,68,0.1)",
+            border: "1px solid rgba(239,68,68,0.3)",
+            borderRadius: 8,
+            padding: "12px",
+            marginBottom: "20px",
+            color: "#fca5a5",
+            fontSize: "13px",
+            textAlign: "left",
+            wordBreak: "break-word",
+            fontFamily: "sans-serif"
+          }}>
+            {authError}
+          </div>
+        )}
 
         <button
           onClick={login}

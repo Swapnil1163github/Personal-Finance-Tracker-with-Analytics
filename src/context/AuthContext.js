@@ -33,6 +33,7 @@ function mapAccountToUser(account) {
 export function AuthProvider({ children }) {
   const [account, setAccount] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -41,17 +42,22 @@ export function AuthProvider({ children }) {
       try {
         await msalInstance.initialize();
       } catch (e) {
-        // Ignore already initialized errors
+        if (mounted) setAuthError("Init error: " + e.message);
       }
 
       try {
         const redirectResult = await msalInstance.handleRedirectPromise();
+        if (window.location.hash.includes("code=")) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
         const activeAccount = redirectResult?.account || msalInstance.getAllAccounts()[0] || null;
         if (activeAccount) msalInstance.setActiveAccount(activeAccount);
         if (mounted) setAccount(activeAccount);
       } catch (error) {
         console.error("MSAL redirect error:", error);
         window.history.replaceState({}, document.title, window.location.pathname);
+        if (mounted) setAuthError("Redirect error: " + (error.message || error.toString()));
+        
         const activeAccount = msalInstance.getAllAccounts()[0] || null;
         if (activeAccount) msalInstance.setActiveAccount(activeAccount);
         if (mounted) setAccount(activeAccount);
@@ -67,6 +73,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async () => {
+    if (authError) setAuthError(null);
     try {
       const result = await msalInstance.loginPopup(loginRequest);
       msalInstance.setActiveAccount(result.account);
@@ -79,15 +86,15 @@ export function AuthProvider({ children }) {
         await msalInstance.loginRedirect(loginRequest);
       } catch (redirectError) {
         console.error("loginRedirect failed:", redirectError);
-        if (redirectError && redirectError.errorCode === "interaction_in_progress") {
-          // Cache is stuck, clear it and reload
+        setAuthError("Login failed: " + (redirectError.message || redirectError.toString()) + ". Resetting...");
+        setTimeout(() => {
           window.sessionStorage.clear();
           window.localStorage.clear();
-          window.location.reload();
-        }
+          window.location.href = window.location.pathname;
+        }, 2000);
       }
     }
-  }, []);
+  }, [authError]);
 
   const logout = useCallback(async () => {
     const activeAccount = msalInstance.getActiveAccount() || account;
@@ -140,6 +147,7 @@ export function AuthProvider({ children }) {
       getAccessToken,
       loading,
       isAuthenticated: !!user,
+      authError,
     }}>
       {children}
     </AuthContext.Provider>
